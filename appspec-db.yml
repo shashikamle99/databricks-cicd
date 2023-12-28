@@ -1,0 +1,35 @@
+version: 0.2
+
+env:
+  parameter-store:
+    DATABRICKS_HOST: 
+    DATABRICKS_TOKEN:
+    GITREPOREMOTE: "https://github.com/shashikamle99/databrickscicd.git"
+    GITBRANCH: "main"
+    DBCLIPATH: "/usr/local/bin"
+    JQPATH: "/usr/bin"
+    JOBPREFIX: "db"
+    BUNDLETARGET: "dev"
+
+phases:
+  install:
+    runtime-versions:
+      ubuntu: 22.04
+  pre_build:
+    commands:
+      - sudo apt-get install unzip -y
+      - curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
+      - sudo apt-get install jq -y
+      - sudo apt install pip -y
+      - pip install --upgrade wheel
+  build:
+    commands:
+      - "${DBCLIPATH}/databricks bundle validate -t ${BUNDLETARGET}"
+      - "${DBCLIPATH}/databricks bundle deploy -t ${BUNDLETARGET}"
+      - "${DBCLIPATH}/databricks bundle run -t ${BUNDLETARGET} run-unit-tests"
+      - "${DBCLIPATH}/databricks bundle run -t ${BUNDLETARGET} run-dabdemo-notebook"
+      - "${DBCLIPATH}/databricks bundle run -t ${BUNDLETARGET} evaluate-notebook-runs"
+  post_build:
+    commands:
+      - echo "Build completed successfully!"
+
